@@ -1,8 +1,8 @@
 /* eslint-disable camelcase */
-/* eslint-disable no-plusplus */
-import crypto from 'crypto';
 import { Wit, log } from 'node-wit';
-import { reply } from './facebook';
+import { reply } from '../facebook';
+import Logger from '../../libs/logger';
+
 /*
  * Verify that the callback came from Facebook. Using the App Secret from
  * the App Dashboard, we can verify the signature that is sent with each
@@ -12,32 +12,7 @@ import { reply } from './facebook';
  *
  */
 const { WIT_TOKEN } = process.env; // Wit.ai parameters
-if (!WIT_TOKEN) throw new Error('[INDEX.JS] Missing WIT_TOKEN');
-const { FB_APP_SECRET } = process.env;
-if (!FB_APP_SECRET) throw new Error('[HANDLER.JS] Missing FB_APP_SECRET');
-
-export function verifyRequestSignature(req, res, buf) {
-  const signature = req.headers['x-hub-signature'];
-  console.log(signature);
-
-  if (!signature) {
-    // For testing, let's log an error. In production, you should throw an
-    // error.
-    console.error('Couldn\'t validate the signature.');
-  } else {
-    const elements = signature.split('=');
-    // const method = elements[0];
-    const signatureHash = elements[1];
-
-    const expectedHash = crypto.createHmac('sha1', FB_APP_SECRET)
-      .update(buf)
-      .digest('hex');
-
-    if (signatureHash !== expectedHash) {
-      throw new Error('Couldn\'t validate the request signature.');
-    }
-  }
-}
+if (!WIT_TOKEN) throw new Error('[HANDLER.JS] Missing WIT_TOKEN');
 
 // Setting up our bot
 const wit = new Wit({
@@ -80,6 +55,7 @@ const swearingEntityHandler = async (senderId, entities) => {
   await Promise.all(promiseArr);
 };
 
+// handle message response
 const entitiesHandler = async (senderId, entities) => {
   // You can customize your response to these entities
   // For now, let's reply with another automatic message
@@ -102,6 +78,7 @@ const entitiesHandler = async (senderId, entities) => {
   await Promise.all(promiseArr);
 };
 
+// handle received message
 export const messageHandler = async (req, res) => {
   const { object, entry = [] } = req.body;
 
@@ -113,10 +90,11 @@ export const messageHandler = async (req, res) => {
   for (let i = 0; i < entry.length; i++) {
     const currentEntry = entry[i];
     const { messaging = [] } = currentEntry;
+
     for (let j = 0; j < messaging.length; j++) {
       const event = messaging[j];
       if (!event.message || event.message.is_echo) {
-        console.log('Received event:', JSON.stringify(event));
+        Logger.info('Received event:', JSON.stringify(event));
         continue;
       } // end if
       // Yay! We got a new message!
@@ -130,7 +108,7 @@ export const messageHandler = async (req, res) => {
         // We received an attachment
         // Let's reply with an automatic message
         reply(senderId, 'Sorry I can only process text messages for now.')
-          .catch(console.error);
+          .catch(Logger.error);
         continue;
       } // end if
 
@@ -143,7 +121,7 @@ export const messageHandler = async (req, res) => {
               await reply(senderId, `We've received your message: ${text}.`);
               await entitiesHandler(senderId, entities);
             } catch (error) {
-              console.log('error while sending message: ', error.message || error);
+              Logger.error('error while sending message: ', error.message || error);
             }
           })
           .catch(error => console.error('Oops! Got an error from Wit: ', error.stack || error));
