@@ -1,7 +1,8 @@
 /* eslint-disable camelcase */
 import { Wit, log } from 'node-wit';
 import { reply } from '../facebook';
-import Logger from '../../libs/logger';
+import Logger from '../../utils/logger';
+import WitAIService from '../witai/witai.service';
 
 /*
  * Verify that the callback came from Facebook. Using the App Secret from
@@ -20,39 +21,31 @@ const wit = new Wit({
   logger: new log.Logger(log.INFO),
 });
 
+const entityHandler = async (senderId, entities) => {
+  const { intent, ...entityObj } = entities;
+  const entityList = Object.keys(entityObj);
+  const valueSet = entityList.reduce((acc, entity) => {
+    const predictedArr = entityObj[entity];
+    // eslint-disable-next-line no-underscore-dangle
+    const valueList = predictedArr.map(predictedValue => predictedValue.value);
 
-const learningEntityHandler = async (senderId, entities) => {
-  const { learningName } = entities;
-  if (!learningName) {
-    await reply(senderId, 'Sorry but your request havent been supported yet!');
-    return;
-  }
-  const promiseArr = [];
-  for (let i = 0; i < learningName.length; i++) {
-    if (learningName[i].value === 'javascript') {
-      promiseArr.push(reply(senderId, 'https://nodejs.com'));
-    } else {
-      promiseArr.push(reply(senderId, `Oops! We havent support ${learningName[i].value} yet!`));
-    }
-  }
-  await Promise.all(promiseArr);
-};
+    valueList.forEach((value) => {
+      acc.add(value);
+    });
+    return acc;
+  }, new Set());
+  const valueList = Array.from(valueSet);
+  const intentList = intent.map(i => i.value);
 
-const swearingEntityHandler = async (senderId, entities) => {
-  const { swear_word } = entities;
-  if (!swear_word) {
-    await reply(senderId, 'Say that again!');
-    return;
-  }
-  const promiseArr = [];
-  for (let i = 0; i < swear_word.length; i++) {
-    if (swear_word[i].value === 'nigga') {
-      promiseArr.push(reply(senderId, 'Chill man! Im Asian!'));
-    } else {
-      promiseArr.push(reply(senderId, 'What a dirty word!'));
-    }
-  }
-  await Promise.all(promiseArr);
+  const reponseList = await WitAIService.getResponseList(
+    intentList,
+    entityList,
+    valueList,
+  );
+
+  // console.log(reponseList);
+  const reponsePromise = reponseList.map(responseObj => reply(senderId, responseObj.response));
+  await Promise.all(reponsePromise);
 };
 
 // handle message response
@@ -61,19 +54,13 @@ const entitiesHandler = async (senderId, entities) => {
   // For now, let's reply with another automatic message
   const { intent } = entities;
   if (!intent) {
-    await reply(senderId, 'W0t?');
+    await reply(senderId, 'Sorry I don\'t understand it :(');
     return;
   }
 
-  const callTable = {
-    learning: learningEntityHandler,
-    swearing: swearingEntityHandler,
-  };
-
   const promiseArr = [];
   for (let i = 0; i < intent.length; i++) {
-    const currentIntent = intent[i];
-    promiseArr.push(callTable[currentIntent.value](senderId, entities));
+    promiseArr.push(entityHandler(senderId, entities));
   }
   await Promise.all(promiseArr);
 };

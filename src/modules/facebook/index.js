@@ -2,7 +2,7 @@
 import axios from 'axios';
 import dotenv from 'dotenv';
 import crypto from 'crypto';
-import Logger from '../../libs/logger';
+import Logger from '../../utils/logger';
 
 dotenv.config();
 // ----------------------------------------------------------------------------

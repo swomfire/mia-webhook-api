@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 
 import chalk from 'chalk';
 import moment from 'moment';
@@ -5,7 +6,11 @@ import moment from 'moment';
 const { log } = console;
 const tag = status => `[${status.padEnd(8)} - ${moment().format('DD/MMM/YYYY hh:mm:ss')}]:`;
 
-const Logger = {
+/**
+ * Logger middleware, you can customize it to make messages more personal
+ */
+const logger = {
+  // Called whenever there's an error on the server we want to print
   log,
   note(...msg) {
     log(chalk.white(tag('NOTE'), msg));
@@ -24,4 +29,4 @@ const Logger = {
   },
 };
 
-export default Logger;
+export default logger;

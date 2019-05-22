@@ -4,8 +4,8 @@ import bodyParser from 'body-parser';
 import express from 'express';
 import mongoose from 'mongoose';
 import { Server } from 'http';
-import SocketIO from 'socket.io';
-import Logger from './libs/logger';
+// import SocketIO from 'socket.io-client';
+import Logger from './utils/logger';
 
 dotenv.config();
 
@@ -51,8 +51,8 @@ app.get('/webhook', (req, res) => {
 // Message handler
 app.post('/webhook', messageHandler);
 
-const server = Server(app);
-const io = SocketIO(server);
+// const server = Server(app);
+// const io = SocketIO(server);
 // END SETUP EXPRESS
 
 // SETUP SOCKETIO
@@ -61,12 +61,13 @@ const io = SocketIO(server);
 // but why do we use socket.io?
 // because chatting request low lantency
 // by using HTTP protocol will harm performance and cause bad UX
-io.on('connection', (socket) => {
-  socket.emit('news', { hello: 'world' });
-  socket.on('ping', () => {
-    console.log('pong');
-  });
-});
+
+// io.on('connection', (socket) => {
+//   socket.emit('news', { hello: 'world' });
+//   socket.on('ping', () => {
+//     console.log('pong');
+//   });
+// });
 
 // END SETUP SOCKETIO
 
@@ -76,7 +77,7 @@ const { MONGO_URL, MONGO_USER, MONGO_PASSWORD } = process.env;
 db.once('open', () => {
   Logger.info('Established connection to database server');
 
-  server.listen(PORT, () => {
+  app.listen(PORT, () => {
     Logger.success(`Listening on port: ${PORT}`);
   });
 });
