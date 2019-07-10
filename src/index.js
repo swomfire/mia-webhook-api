@@ -3,8 +3,7 @@ import dotenv from 'dotenv';
 import bodyParser from 'body-parser';
 import express from 'express';
 import mongoose from 'mongoose';
-import { Server } from 'http';
-// import SocketIO from 'socket.io-client';
+import SocketIOClient from 'socket.io-client';
 import Logger from './utils/logger';
 
 dotenv.config();
@@ -13,7 +12,7 @@ import { messageHandler } from './modules/rootHandler';
 import { verifyRequestSignature } from './modules/facebook';
 
 // LOADING CONFIG AND PARAMETERS
-const { PORT = 3000, FB_APP_SECRET } = process.env;
+const { PORT = 3001, FB_APP_SECRET } = process.env;
 if (!FB_APP_SECRET) throw new Error('[INDEX.JS] Missing FB_APP_SECRET');
 
 const FB_VERIFY_TOKEN = 'anhcoyeuemkhong';
@@ -62,12 +61,13 @@ app.post('/webhook', messageHandler);
 // because chatting request low lantency
 // by using HTTP protocol will harm performance and cause bad UX
 
-// io.on('connection', (socket) => {
-//   socket.emit('news', { hello: 'world' });
-//   socket.on('ping', () => {
-//     console.log('pong');
-//   });
-// });
+const io = new SocketIOClient('http://localhost:3000', {
+  path: '/chat',
+});
+
+io.on('connect', () => {
+  console.log('Connected to websocket server');
+});
 
 // END SETUP SOCKETIO
 
