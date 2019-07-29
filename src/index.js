@@ -7,7 +7,7 @@ import SocketIOClient from 'socket.io-client';
 import Logger from './utils/logger';
 
 dotenv.config();
-
+import registerRouters from './modules/routers';
 import { messageHandler } from './modules/rootHandler';
 import { verifyRequestSignature } from './modules/facebook';
 
@@ -46,6 +46,9 @@ app.get('/webhook', (req, res) => {
     res.sendStatus(400);
   }
 });
+
+const router = registerRouters();
+app.use('/api', [], router);
 
 // Message handler
 app.post('/webhook', messageHandler);
