@@ -1,16 +1,16 @@
 import BaseController from '../base/base.controller';
-import httpStatus from 'http-status';
+import dotenv from 'dotenv';
 import { OAUTH2 } from '../../../oauth2-config';
-const http = require('http');
-const url = require('url');
+import express from 'express';
+dotenv.config();
 const opn = require('open');
-const destroyer = require('server-destroy');
 const { google } = require('googleapis');
 
+const { OAUTH_REDIRECT_URI } = process.env;
 export const oauth2Client = new google.auth.OAuth2(
   OAUTH2.client_id,
   OAUTH2.client_secret,
-  "http://localhost:3001/api/auth/oauth/callback",
+  OAUTH_REDIRECT_URI,
 );
 
 /**
@@ -20,21 +20,19 @@ google.options({ auth: oauth2Client });
 
 
 const scopes = ['https://www.googleapis.com/auth/dialogflow'];
+const app = express();
+let oauthServer;
 
-async function authenticate() {
+function authenticate() {
   return new Promise((resolve, reject) => {
     // grab the url that will be used for authorization
     const authorizeUrl = oauth2Client.generateAuthUrl({
       access_type: 'offline',
       scope: scopes.join(' '),
     });
-    const server = http
-      .createServer()
-      .listen(3000, () => {
-        // open the browser to the authorize url to start the workflow
-        opn(authorizeUrl, { wait: false }).then(cp => cp.unref());
-      });
-    destroyer(server);
+    oauthServer = app.listen(3002, function () {
+      opn(authorizeUrl, { wait: false }).then(cp => cp.unref());
+    });
   });
 }
 
@@ -57,6 +55,7 @@ class AuthController extends BaseController {
     const { tokens } = await oauth2Client.getToken(code);
     oauth2Client.setCredentials(tokens);
     res.end('Authentication successful! Please return to the console.');
+    oauthServer.close();
   }
 }
 

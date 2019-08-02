@@ -3,7 +3,7 @@ import httpStatus from 'http-status';
 import axios from 'axios';
 import { oauth2Client } from '../auth/auth.controller';
 
-const URL = "https://dialogflow.googleapis.com/v2/projects/hahacc-jsnhvj/agent/sessions/5f1ddc67-e8ff-1351-f3a8-727325c8d749:detectIntent";
+const { DIALOG_FLOW_API } = process.env;
 
 class ChatController extends BaseController {
   dialog = async (req, res) => {
@@ -11,7 +11,7 @@ class ChatController extends BaseController {
     const { content } = body;
     const { token } = await oauth2Client.getAccessToken();
     try {
-      const result = await axios.post(URL, {
+      const result = await axios.post(DIALOG_FLOW_API, {
         queryInput: {
           text: {
             text: content,
