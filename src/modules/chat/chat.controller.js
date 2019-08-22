@@ -4,15 +4,16 @@ import axios from 'axios';
 import { oauth2Client } from '../auth/auth.controller';
 import SOLUTION from './chat.solution';
 
-const { DIALOG_FLOW_API } = process.env;
+const { DIALOGFLOW_API_URL, PROJECT_ID, INTENT_RESPONSE_API } = process.env;
 
+const URL = `${DIALOGFLOW_API_URL}/${PROJECT_ID}`;
 class ChatController extends BaseController {
   dialog = async (req, res) => {
     const { body } = req;
     const { content } = body;
     const { token } = await oauth2Client.getAccessToken();
     try {
-      const result = await axios.post(DIALOG_FLOW_API, {
+      const result = await axios.post(`${URL}/${INTENT_RESPONSE_API}`, {
         queryInput: {
           text: {
             text: content,
