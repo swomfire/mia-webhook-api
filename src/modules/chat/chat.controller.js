@@ -2,6 +2,7 @@ import BaseController from '../base/base.controller';
 import httpStatus from 'http-status';
 import axios from 'axios';
 import { oauth2Client } from '../auth/auth.controller';
+import SOLUTION from './chat.solution';
 
 const { DIALOG_FLOW_API } = process.env;
 
@@ -33,6 +34,20 @@ class ChatController extends BaseController {
       const { status, data } = response;
       return res.status(status).send({ data });
     }
+  }
+
+  hook = async (req, res) => {
+    const { body } = req;
+    const { queryResult } = body;
+    // Get intent parameters
+    const { parameters } = queryResult;
+    const { Device, Cause, Result } = parameters;
+    // Handle parameter here
+    const device = SOLUTION[Device] || {};
+    console.log(device);
+    const solution = device[`${Cause}-${Result}`] || 'No solution found';
+    return res.status(httpStatus.OK).send({ fulfillment_text: solution });
+
   }
 }
 
