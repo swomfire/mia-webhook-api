@@ -2,7 +2,7 @@ import BaseController from '../base/base.controller';
 import httpStatus from 'http-status';
 import axios from 'axios';
 import { oauth2Client } from '../auth/auth.controller';
-import SOLUTION from './chat.solution';
+import IntentResponseService from '../intentResponse/intentResponse.service';
 
 const { DIALOGFLOW_API_URL, PROJECT_ID, INTENT_RESPONSE_API } = process.env;
 
@@ -41,13 +41,10 @@ class ChatController extends BaseController {
     const { body } = req;
     const { queryResult } = body;
     // Get intent parameters
-    const { parameters } = queryResult;
-    const { Device, Cause, Result } = parameters;
-    // Handle parameter here
-    const device = SOLUTION[Device] || {};
-    console.log(device);
-    const solution = device[`${Cause}-${Result}`] || 'No solution found';
-    return res.status(httpStatus.OK).send({ fulfillment_text: solution });
+    const { parameters, intent } = queryResult;
+    const data = await IntentResponseService.getResponseByParamsAndIntent(intent, parameters);
+    // console.log(data);
+    return res.status(httpStatus.OK).send({ fulfillment_text: data.en });
 
   }
 }

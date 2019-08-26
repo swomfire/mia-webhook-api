@@ -8,11 +8,27 @@ const { DIALOGFLOW_API_URL, PROJECT_ID } = process.env;
 const URL = `${DIALOGFLOW_API_URL}/${PROJECT_ID}`;
 
 class DialogflowController extends BaseController {
-  list = async (req, res) => {
+  getIntentList = async (req, res) => {
     const { token } = await oauth2Client.getAccessToken();
-    console.log(token);
     try {
       const result = await axios.get(`${URL}/agent/intents?intentView=INTENT_VIEW_FULL`,
+        {
+          headers: { Authorization: "Bearer " + token }
+        }
+      );
+      const { data } = result;
+      return res.status(httpStatus.OK).send({ data });
+    } catch (error) {
+      const { response } = error;
+      const { status, data } = response;
+      return res.status(status).send({ data });
+    }
+  }
+
+  getEntityList = async (req, res) => {
+    const { token } = await oauth2Client.getAccessToken();
+    try {
+      const result = await axios.get(`${URL}/agent/entityTypes`,
         {
           headers: { Authorization: "Bearer " + token }
         }
