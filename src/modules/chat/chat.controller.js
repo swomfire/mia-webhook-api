@@ -43,7 +43,6 @@ class ChatController extends BaseController {
     // Get intent parameters
     const { parameters, intent } = queryResult;
     const data = await IntentResponseService.getResponseByParamsAndIntent(intent, parameters);
-    // console.log(data);
     return res.status(httpStatus.OK).send({ fulfillment_text: data.en });
 
   }

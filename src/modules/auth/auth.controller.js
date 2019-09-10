@@ -1,7 +1,9 @@
 import BaseController from '../base/base.controller';
 import dotenv from 'dotenv';
+import _isEmpty from 'lodash/isEmpty';
 import { OAUTH2 } from '../../../oauth2-config';
 import express from 'express';
+import AuthService from './auth.service';
 dotenv.config();
 const opn = require('open');
 const { google } = require('googleapis');
@@ -24,15 +26,21 @@ const app = express();
 let oauthServer;
 
 function authenticate() {
-  return new Promise((resolve, reject) => {
-    // grab the url that will be used for authorization
-    const authorizeUrl = oauth2Client.generateAuthUrl({
-      access_type: 'offline',
-      scope: scopes.join(' '),
-    });
-    oauthServer = app.listen(3002, function () {
-      opn(authorizeUrl, { wait: false }).then(cp => cp.unref());
-    });
+  AuthService.getToken().then((token) => {
+    if (!_isEmpty(token)) {
+      oauth2Client.setCredentials(token);
+    } else {
+      return new Promise((resolve, reject) => {
+        // grab the url that will be used for authorization
+        const authorizeUrl = oauth2Client.generateAuthUrl({
+          access_type: 'offline',
+          scope: scopes.join(' '),
+        });
+        oauthServer = app.listen(3003, function () {
+          opn(authorizeUrl, { wait: false }).then(cp => cp.unref());
+        });
+      });
+    }
   });
 }
 
@@ -53,6 +61,7 @@ class AuthController extends BaseController {
     const { query } = req;
     const { code } = query
     const { tokens } = await oauth2Client.getToken(code);
+    AuthService.insert(tokens);
     oauth2Client.setCredentials(tokens);
     res.end('Authentication successful! Please return to the console.');
     oauthServer.close();

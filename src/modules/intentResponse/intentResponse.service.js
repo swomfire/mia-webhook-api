@@ -1,4 +1,5 @@
 import intentResponseCollection from './intentResponse.model';
+import _isEmpty from 'lodash/isEmpty';
 import BaseService from '../base/base.service';
 import { getIntentId } from './intentResponse.utils';
 import IntentCollection from '../intent/intent.model';
@@ -13,6 +14,7 @@ class IntentResponseService extends BaseService {
     const intentId = getIntentId(intent.name);
     const refinedArray = [];
     const intentDB = await IntentCollection.findOne({ intentId }).exec();
+    const defaultResponse = { en: 'No Solution' };
     if (intentDB) {
       const parameterIds = [];
       intentDB.parameters.forEach(({ parameterId, displayName }) => {
@@ -33,7 +35,7 @@ class IntentResponseService extends BaseService {
           $elemMatch: { parameterId: { $in: parameterIds } },
         },
       }).exec();
-      let finalResponse = {};
+      let finalResponse = defaultResponse;
       responses.some(({ parameters: parameterDBs, response: solution }) => {
         let responseFinded = true;
         refinedArray.some(({ value, parameterId }) => {
@@ -43,14 +45,14 @@ class IntentResponseService extends BaseService {
             return true;
           }
         });
-        if (responseFinded) {
+        if (!_isEmpty(responseFinded)) {
           finalResponse = solution;
           return true;
         }
       });
       return finalResponse;
     }
-    return { en: 'No Solution' };
+    return defaultResponse;
   }
 }
 
