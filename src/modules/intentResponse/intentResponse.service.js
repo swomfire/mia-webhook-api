@@ -45,7 +45,7 @@ class IntentResponseService extends BaseService {
             return true;
           }
         });
-        if (!_isEmpty(responseFinded)) {
+        if (responseFinded) {
           finalResponse = solution;
           return true;
         }
